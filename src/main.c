@@ -1,14 +1,16 @@
 /*
  * main.c - TUN device setup + main frame dispatch loop
- * Latest feat: wiring in ARP handler
+ * Latest feat: wiring in IPv4 + ICMP handler
  *
- * Compile:	gcc -o stack main.c arp.c
+ * Compile:	gcc -o stack main.c arp.c ip.c icmp.c
  * Run:		sudo ./stack
  *
  * In a second terminal:
  *	sudo ip addr add 10.0.0.1/24 dev tun0
  *	sudo ip link set tun0 up
  *	ping 10.0.0.2	<- packets will appear in our program
+ *
+ *	Expected: ping now shows 0% packet loss and round-trip times!
 */
 
 #include <iso646.h>
@@ -30,6 +32,7 @@
 #include <arpa/inet.h>
 
 #include "arp.h"
+#include "ip.h"
 
 /* ----------------------------------------------------------------------
  * Our stack's identity on the network.
@@ -127,11 +130,7 @@ static void handle_frame(int fd, const uint8_t *buf, ssize_t len)
     break;
 
   case ETHERTYPE_IPV4:
-    /*
-     * TODO: parse IPv4 header, dispatch to ICMP / TCP.
-     * For now just notes that we're receiving IP packets
-     */
-    printf("[ip]  IPv4 packet received (len=%zd) — TODO phase 3\n", len);
+    ip_handle(payload, plen, fd, OUR_MAC, OUR_IP);
     /* hexdump(payload, plen); */
     break;
 
